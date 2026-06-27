@@ -1,0 +1,76 @@
+# --- Heterogeneous T2MAC Configuration ---
+heterogeneous: True
+
+num_roles: 5
+role_names:
+  - "scout"
+  - "fighter"
+  - "medic"
+  - "tank"
+  - "support"
+
+role_emb_dim: 16
+history_len: 5
+
+roles:
+  scout:
+    hidden_dim: 64
+  fighter:
+    hidden_dim: 128
+  medic:
+    hidden_dim: 96
+  tank:
+    hidden_dim: 128
+  support:
+    hidden_dim: 96
+
+encoder_dim_per_role:
+  scout: 64
+  fighter: 128
+  medic: 96
+  tank: 128
+  support: 96
+
+hidden_dim_per_role:
+  scout: 64
+  fighter: 128
+  medic: 96
+  tank: 128
+  support: 96
+
+message_dim_per_role:
+  scout: 64
+  fighter: 64
+  medic: 64
+  tank: 64
+  support: 64
+
+trust_enabled: True
+role_attention_enabled: True
+role_assignment_method: "unit_type" # "fixed", "random", "unit_type"
+
+# --- TarMAC specific parameters ---
+action_selector: "epsilon_greedy"
+epsilon_start: 1.0
+epsilon_finish: 0.05
+epsilon_anneal_time: 50000
+runner: "episode"
+buffer_size: 5000
+target_update_interval: 200
+agent_output_type: "q"
+double_q: True
+mixer: "qmix"
+mixing_embed_dim: 32
+hypernet_layers: 2
+hypernet_embed: 64
+comm_coef: 0.05
+min_uncer: 0.1
+
+n_value: 64
+n_key: 64
+n_query: 64
+mac: "tmac_p2p_comm_mac"
+agent: "heterogeneous_agent"
+lambda_entropy: 0.0
+learner: "tmac_p2p_comm_learner"
+name: "heterogeneous_t2mac"
