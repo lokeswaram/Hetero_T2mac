@@ -74,7 +74,7 @@ def evaluate_sequential(args, runner):
     runner.close_env()
 
 def run_sequential(args, logger):
-
+    print("========== 1 ==========")
     # Init runner so we can get env info
     runner = r_REGISTRY[args.runner](args=args, logger=logger)
 
@@ -114,7 +114,7 @@ def run_sequential(args, logger):
 
     # Setup multiagent controller here
     mac = mac_REGISTRY[args.mac](buffer.scheme, groups, args)
-
+    print("========== 2 ==========")
     # Give runner the scheme
     runner.setup(scheme=scheme, groups=groups, preprocess=preprocess, mac=mac)
 
