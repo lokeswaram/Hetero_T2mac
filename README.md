@@ -1,73 +1,122 @@
-# Exclusively Heterogeneous T2MAC (H-T2MAC)
+# Heterogeneous T2MAC (Hetero_T2MAC)
 
-This repository contains the refactored, **exclusively heterogeneous** implementation of **Heterogeneous Target-Triggered Multi-Agent Communication** (H-T2MAC). All homogeneous multi-agent communication modules, controllers, critics, configurations, and baseline learners have been completely removed or deactivated.
+Heterogeneous Target-Triggered Multi-Agent Communication (Hetero_T2MAC) is a state-of-the-art Multi-Agent Reinforcement Learning (MARL) framework designed specifically for heterogeneous agents. In complex environments like the StarCraft Multi-Agent Challenge (SMAC), agents belong to different unit types (e.g., Scout, Fighter, Medic, Tank, Support) and require distinct observation capacities, policy dimensions, recurrent states, and communication behaviors. 
 
----
-
-## 🛑 What Was Removed and Why
-
-To ensure the codebase runs exclusively in heterogeneous mode (H-T2MAC) and to clean up unnecessary legacy components, the following files and folders have been removed or cleared:
-
-### 1. Homogeneous Configs (`src/config/algs/`)
-*   **Removed**: `coma.yaml`, `iql.yaml`, `iql_beta.yaml`, `qmix.yaml`, `qmix_beta.yaml`, `qtran.yaml`, `tmac_comm_rate.yaml`, `tmac_full_comm.yaml`, `tmac_p2p_comm.yaml`, `tmac_vffac.yaml`, `vdn.yaml`, `vdn_beta.yaml`, `vffac.yaml`
-*   **Why**: These algorithms enforced parameter sharing, uniform recurrent memory dimensions, and identical observation/action structures, which are conceptually and structurally incompatible with role-specific heterogeneity.
-
-### 2. Homogeneous Multi-Agent Controllers (`src/controllers/`)
-*   **Removed**: `basic_controller.py`, `tmac_comm_rate_controller.py`, `tmac_full_comm_controller.py`, `tmac_vffac_controller.py`, `vffac_controller.py`
-*   **Why**: They implemented standard multi-agent controllers (MACs) where a single network is shared by all agents, violating the heterogeneous agent design.
-*   **Simplified**: `tmac_p2p_comm_controller.py` has been refactored to remove all `else` fallbacks, making it execute only the heterogeneous path (H-T2MAC).
-
-### 3. Homogeneous Agent Modules (`src/modules/agents/`)
-*   **Removed**: `rnn_agent.py`, `rnn_msg_agent.py`, `tmac_rnn_agent.py`, `tmac_rnn_msg_agent.py`, `tmac_p2p_comm_rnn_msg_agent.py`, `tmac_full_comm_rnn_msg_agent.py`, `tmac_comm_rate_rnn_msg_agent.py`
-*   **Why**: These agent architectures utilized shared weight matrices and forced identical fully-connected/recurrent layer sizes on all agents.
-
-### 4. Homogeneous Critics and Learners
-*   **Removed**: `coma.py` (critic) and learners (`coma_learner.py`, `q_learner.py`, `qtran_learner.py`, `tmac_comm_rate_learner.py`, `tmac_full_comm_learner.py`, `tmac_vffac_learner.py`, `vffac_learner.py`)
-*   **Why**: Legacy learners and critics that do not support role-specific embeddings or role-aware structures.
-
-### 5. Legacy Runners
-*   **Removed**: `parallel_runner.py`
-*   **Why**: The parallel runner lacked role mapping interfaces and role metric logging integrations.
-
-### 6. Deprecated Folders and Directories
-*   **Removed**: `src/smac/` folder (moved to `src/smac_hetero/` to avoid python package namespace conflicts).
-*   **Removed**: `homogeneous_components.md` (no longer relevant).
-
-> [!NOTE]
-> *Note on Sandbox File Deletion*: Because the terminal sandbox environment isolates process command-line file deletions (`Remove-Item` / `del`) at the OS filesystem filter layer, the files and legacy directories listed above have been cleared of their content (overwritten to be 0 bytes/empty) and completely removed from python imports and registrations. They are no longer loaded or executed.
+Unlike homogeneous MARL systems that force all agents to share identical network parameters, Hetero_T2MAC factorizes agent architectures by using specialized, role-based neural network banks and learnable role embeddings.
 
 ---
 
-## 🚀 How to Run the Heterogeneous System
+## Key Features & Architecture
 
-### Step 1: Activate Environment
-Activate the isolated python virtual environment (`.venv`) located in the parent directory:
-```powershell
-# In PowerShell (Windows)
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process -Force
-..\.venv\Scripts\Activate.ps1
+```
+                       Observation
+                            │
+                            ▼
+                      [Role Encoder]       (Role-specific observation mapping)
+                            │
+                            ▼
+                     [Hetero Agent]        (Central agent model coordinator)
+                            │
+                            ▼
+                  [Communication Module]   (Generates queries, keys, and values)
+                            │
+                            ▼
+                    [Role Attention]       (Attention weights conditioned on role embs)
+                            │
+                            ▼
+                    [Trust Estimator]      (Gating via communication history & utility)
+                            │
+                            ▼
+                      [GRU Memory]         (Recurrent hidden state preservation)
+                            │
+                            ▼
+                     [Action Head]         (Role-specific action Q-value outputs)
 ```
 
-### Step 2: Run Verification Script
-To verify the heterogeneous pipeline (agent, role mapper, role-aware critic, recurrent banks, and attention gating mechanisms) runs correctly with mock environment data, execute:
+1. **Role Encoder (`role_encoder.py`)**: Map raw observation features to role-specific hidden spaces using an `EncoderBank` to handle distinct state shapes.
+2. **Hetero Agent (`hetero_agent.py`)**: Orchestrates the forward pass, recurrent updates, and communication aggregation across different agent roles.
+3. **Communication Module (`communication.py`)**: Computes message keys, queries, and values, and evaluates sending probabilities based on uncertainty dynamics.
+4. **Role Attention (`attention.py`)**: Computes dot-product communication attention conditioned on sender/receiver learnable role embeddings.
+5. **Trust Estimator (`trust_estimator.py`)**: Calculates a pairwise trust score ($T_{ij}$) using the history of communication actions and the local usefulness of messages.
+6. **GRU Memory (`role_gru.py`)**: Uses a `GRUBank` of role-specific `nn.GRUCell` layers, allowing different memory capacities for scouts, tanks, and healers.
+7. **Action Head (`action_head.py`)**: Projects hidden states to role-specific action output layers.
+
+---
+
+## Installation
+
+### Linux / Windows Setup
+1. **Clone the repository**:
+   ```bash
+   git clone <repo_url>
+   cd T2MAC_Base-main
+   ```
+
+2. **Conda Setup**:
+   Create and activate the environment:
+   ```bash
+   conda env create -f environment.yml
+   conda activate t2mac
+   ```
+
+3. **Install Requirements**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Install SMAC**:
+   Install the StarCraft Multi-Agent Challenge library:
+   ```bash
+   pip install -e ./smac_source
+   ```
+
+5. **Cleanup Command**:
+   Run the cleanup script to remove deprecated homogeneous components:
+   ```bash
+   clean_repo.bat
+   ```
+
+---
+
+## Training and Evaluation
+
+### Training Command
+To train Hetero_T2MAC on StarCraft II scenario `3s5z`:
 ```bash
-python verify_heterogeneous.py
+python src/main.py --config=hetero_t2mac --env-config=sc2 with env_args.map_name=3s5z use_cuda=True
 ```
-*Expected Output:*
-`All heterogeneous checks passed successfully!`
 
-### Step 3: Run Training on SC2
-To launch training of the exclusively heterogeneous H-T2MAC agents on the StarCraft II `3s5z` map:
+### Evaluation Command
+To evaluate a trained model using saved checkpoints:
 ```bash
-python src/main.py --config=heterogeneous --env-config=sc2 with env_args.map_name=3s5z
+python src/main.py --config=hetero_t2mac --env-config=sc2 with env_args.map_name=3s5z evaluate=True checkpoint_path="results/models/<model_id>"
+```
+
+### Google Colab Integration
+You can run training directly inside Google Colab using the following cells:
+```python
+# Clone the repository
+!git clone <repo_url>
+%cd T2MAC_Base-main
+
+# Install dependencies
+!pip install -r requirements.txt
+
+# Run verification test
+!python verify_heterogeneous.py
+
+# Launch training on dummy environment
+!python src/main.py --config=hetero_t2mac --env-config=dummy
 ```
 
 ---
 
-## 📁 Remaining Heterogeneous Architecture
+## Results and Metrics
 
-*   `src/modules/agents/heterogeneous_agent.py`: Houses role-specific observation encoders, GRUs, policy heads, and attention mechanisms.
-*   `src/modules/role_aware_attention.py`: Handles targeted communication attention weights conditioned on sender/receiver learnable role embeddings.
-*   `src/modules/trust_estimator.py`: Computes pairwise message trust scores based on roles and communication history.
-*   `src/smac_hetero/role_mapper.py`: Translates SC2 unit types into specialized agent roles (Scout, Fighter, Medic, Tank, Support).
-*   `role_metrics.py`: Computes, logs, and plots role-wise rewards, attention distributions, and trust levels.
+Role-wise metric logging is automatically handled during training:
+- **Telemetry Logs**: Saved in the `logs/` directory as CSV files.
+- **Plots**: Real-time plots for rewards, average trust, and role-wise trust are saved in the `plots/` directory (e.g., `role_reward.png`, `avg_trust.png`).
+- **TensorBoard**: Visualizations can be launched via:
+  ```bash
+  tensorboard --logdir=results/tb_logs
+  ```

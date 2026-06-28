@@ -1,1 +1,1 @@
-from .role_aware_critic import RoleAwareCritic
+from .hetero_critic import HeteroCritic

@@ -1,5 +1,5 @@
 REGISTRY = {}
 
-from .heterogeneous_agent import HeterogeneousAgent
+from .hetero_agent import HeteroAgent
 
-REGISTRY['heterogeneous_agent'] = HeterogeneousAgent
+REGISTRY['hetero_agent'] = HeteroAgent

@@ -1,4 +1,4 @@
-from .tmac_p2p_comm_learner import QLearner as P2PLearner
+from .hetero_learner import HeteroLearner
 
 REGISTRY = {}
-REGISTRY['tmac_p2p_comm_learner'] = P2PLearner
+REGISTRY['hetero_learner'] = HeteroLearner

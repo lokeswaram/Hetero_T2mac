@@ -8,8 +8,8 @@ from types import SimpleNamespace as SN
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "src"))
 
 # 1. Imports from the codebase
-from modules.agents.heterogeneous_agent import HeterogeneousAgent
-from modules.critics.role_aware_critic import RoleAwareCritic
+from modules.agents.hetero_agent import HeteroAgent
+from modules.critics.hetero_critic import HeteroCritic
 from smac_hetero.role_mapper import SMACRoleMapper
 
 def test_heterogeneous_pipeline():
@@ -59,8 +59,8 @@ def test_heterogeneous_pipeline():
     assert roles == [1, 2, 4], f"Unexpected mapped roles: {roles}"
 
     input_dim = 40
-    print("Initializing HeterogeneousAgent...")
-    agent = HeterogeneousAgent(input_dim, args)
+    print("Initializing HeteroAgent...")
+    agent = HeteroAgent(input_dim, args)
 
     print("Initializing hidden states...")
     hidden_states = []
@@ -102,12 +102,12 @@ def test_heterogeneous_pipeline():
     assert list(final_q.shape) == [2, 3, 6]
     assert list(trust_scores.shape) == [2, 3, 3]
 
-    print("Testing RoleAwareCritic...")
+    print("Testing HeteroCritic...")
     scheme = {
         "state": {"vshape": 50},
         "obs": {"vshape": 40}
     }
-    critic = RoleAwareCritic(scheme, args)
+    critic = HeteroCritic(scheme, args)
     
     # Mock Batch
     class MockBatch:

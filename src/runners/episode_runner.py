@@ -27,9 +27,8 @@ class EpisodeRunner:
         # Log the first run
         self.log_train_stats_t = -1000000
         
-        if getattr(self.args, "heterogeneous", False):
-            from role_metrics import RoleMetricsLogger
-            self.role_metrics_logger = RoleMetricsLogger()
+        from role_metrics import RoleMetricsLogger
+        self.role_metrics_logger = RoleMetricsLogger()
 
     def setup(self, scheme, groups, preprocess, mac):
         self.new_batch = partial(EpisodeBatch, scheme, groups, self.batch_size, self.episode_limit + 1,
@@ -57,10 +56,9 @@ class EpisodeRunner:
         episode_return = 0
         
         # Determine roles
-        if getattr(self.args, "heterogeneous", False):
-            if not hasattr(self.mac, "agent_roles") or self.mac.agent_roles is None:
-                roles = self.mac.role_mapper.get_roles(self.env, method=self.args.role_assignment_method)
-                self.mac.set_roles(roles)
+        if not hasattr(self.mac, "agent_roles") or self.mac.agent_roles is None:
+            roles = self.mac.role_mapper.get_roles(self.env, method=self.args.role_assignment_method)
+            self.mac.set_roles(roles)
                 
         self.mac.init_hidden(batch_size=self.batch_size)
 
@@ -72,12 +70,11 @@ class EpisodeRunner:
                 "obs": [self.env.get_obs()]
             }
             
-            if getattr(self.args, "heterogeneous", False):
-                role_embs = self.mac.get_role_embeddings().cpu().numpy()
-                pre_transition_data.update({
-                    "agent_role": [[r] for r in self.mac.agent_roles],
-                    "role_embedding": role_embs
-                })
+            role_embs = self.mac.get_role_embeddings().cpu().numpy()
+            pre_transition_data.update({
+                "agent_role": [[r] for r in self.mac.agent_roles],
+                "role_embedding": role_embs
+            })
 
             self.batch.update(pre_transition_data, ts=self.t)
 
@@ -94,17 +91,16 @@ class EpisodeRunner:
                 "terminated": [(terminated != env_info.get("episode_limit", False),)],
             }
             
-            if getattr(self.args, "heterogeneous", False):
-                # Retrieve from MAC
-                inc = getattr(self.mac, "incoming_messages", th.zeros(self.args.n_agents, self.args.n_value))
-                outg = getattr(self.mac, "outgoing_messages", th.zeros(self.args.n_agents, self.args.n_value))
-                trs = getattr(self.mac, "trust_scores", th.zeros(self.args.n_agents, self.args.n_agents))
-                
-                post_transition_data.update({
-                    "incoming_messages": inc.cpu().numpy(),
-                    "outgoing_messages": outg.cpu().numpy(),
-                    "trust_scores": trs.cpu().numpy(),
-                })
+            # Retrieve from MAC
+            inc = getattr(self.mac, "incoming_messages", th.zeros(self.args.n_agents, self.args.n_value))
+            outg = getattr(self.mac, "outgoing_messages", th.zeros(self.args.n_agents, self.args.n_value))
+            trs = getattr(self.mac, "trust_scores", th.zeros(self.args.n_agents, self.args.n_agents))
+            
+            post_transition_data.update({
+                "incoming_messages": inc.cpu().numpy(),
+                "outgoing_messages": outg.cpu().numpy(),
+                "trust_scores": trs.cpu().numpy(),
+            })
 
             self.batch.update(post_transition_data, ts=self.t)
 
@@ -115,11 +111,10 @@ class EpisodeRunner:
             "avail_actions": [self.env.get_avail_actions()],
             "obs": [self.env.get_obs()]
         }
-        if getattr(self.args, "heterogeneous", False):
-            last_data.update({
-                "agent_role": [[r] for r in self.mac.agent_roles],
-                "role_embedding": self.mac.get_role_embeddings().cpu().numpy()
-            })
+        last_data.update({
+            "agent_role": [[r] for r in self.mac.agent_roles],
+            "role_embedding": self.mac.get_role_embeddings().cpu().numpy()
+        })
         self.batch.update(last_data, ts=self.t)
 
         # Select actions in the last stored state
@@ -139,7 +134,7 @@ class EpisodeRunner:
         cur_returns.append(episode_return)
 
         # Log role-wise metrics if heterogeneous mode is on
-        if getattr(self.args, "heterogeneous", False) and not test_mode:
+        if not test_mode:
             avg_trust = getattr(self.mac, "trust_scores", th.zeros(self.args.n_agents, self.args.n_agents)).mean().item()
             self.role_metrics_logger.log_metric("avg_trust", avg_trust, self.t_env)
             

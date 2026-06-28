@@ -93,14 +93,14 @@ def run_sequential(args, logger):
         "reward": {"vshape": (1,)},
         "terminated": {"vshape": (1,), "dtype": th.uint8},
     }
-    if getattr(args, "heterogeneous", False):
-        scheme.update({
-            "agent_role": {"vshape": (1,), "group": "agents", "dtype": th.long},
-            "role_embedding": {"vshape": (args.role_emb_dim,), "group": "agents", "dtype": th.float32},
-            "incoming_messages": {"vshape": (args.n_value,), "group": "agents", "dtype": th.float32},
-            "outgoing_messages": {"vshape": (args.n_value,), "group": "agents", "dtype": th.float32},
-            "trust_scores": {"vshape": (args.n_agents,), "group": "agents", "dtype": th.float32},
-        })
+    # Heterogeneous scheme parameters
+    scheme.update({
+        "agent_role": {"vshape": (1,), "group": "agents", "dtype": th.long},
+        "role_embedding": {"vshape": (args.role_emb_dim,), "group": "agents", "dtype": th.float32},
+        "incoming_messages": {"vshape": (args.n_value,), "group": "agents", "dtype": th.float32},
+        "outgoing_messages": {"vshape": (args.n_value,), "group": "agents", "dtype": th.float32},
+        "trust_scores": {"vshape": (args.n_agents,), "group": "agents", "dtype": th.float32},
+    })
     groups = {
         "agents": args.n_agents
     }
